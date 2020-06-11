@@ -1,0 +1,57 @@
+{
+  "env": {
+    "browser": true,
+    "es2020": true,
+    "node": true
+  },
+  "extends": [
+    "airbnb-base"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 11,
+    "sourceType": "module"
+  },
+  "rules": {
+    "arrow-parens": 0,
+    "one-var": 0,
+    "one-var-declaration-per-line": 0,
+    "prefer-arrow-callback": 0,
+    "new-cap": 0,
+    "consistent-return": 0,
+    "max-len": [2, { "code": 80, "tabWidth": 2, "ignoreUrls": true }],
+    "no-param-reassign": 0,
+    "comma-dangle": 0,
+    "react/jsx-uses-vars": [2],
+    "curly": ["error", "multi-line"],
+    "import/extensions": 0,
+    "import/no-unresolved": [0, { "commonjs": false }],
+    "no-shadow": ["error", { "allow": ["req", "res", "err"] }],
+    "semi": [2, "never"],
+    "valid-jsdoc": [
+      "error",
+      {
+        "requireReturn": false,
+        "requireReturnType": false,
+        "requireParamDescription": false,
+        "requireReturnDescription": false
+      }
+    ],
+    "require-jsdoc": [
+      "error",
+      {
+        "require": {
+          "FunctionDeclaration": true,
+          "MethodDefinition": false,
+          "ClassDeclaration": true
+        }
+      }
+    ],
+    "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true
+      }
+    }
+  }
+}
