@@ -1,13 +1,10 @@
 import csv from 'csvtojson'
 import iPhoneRequests from '../lib/iPhoneRequests'
-import fs from 'fs'
-import path from 'path'
 
 let phoneName = ''
 let iPhoneTradeRequestsArray = []
 let iPhoneGrades = []
 let iPhoneStatus = ''
-const filePath = fs.readFileSync(path.resolve(__dirname, '../iphones.csv'), "utf8")
 
 const formatSpreadsheetData = (data, iPhonesDetails) => {
   // return if its the title row
@@ -43,7 +40,7 @@ const formatSpreadsheetData = (data, iPhonesDetails) => {
 
 export const loadIPhoneRequests = (req, res) => {
   csv()
-  .fromFile(filePath)
+  .fromFile('./iphones.csv')
   .then((jsonObj)=> {
     jsonObj.forEach(data => {
       // convert data to array
