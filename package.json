@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
+    "babel-node": "^0.0.1-security",
     "babel-preset-env": "^1.7.0",
     "csvtojson": "^2.0.10",
     "dotenv": "^7.0.0",
@@ -21,7 +22,7 @@
   },
   "scripts": {
     "start-dev": "nodemon --exec babel-node -- server/server.js",
-    "start": "babel-node -- server/server.js",
+    "start": "babel-node server/server.js",
     "lint": "eslint --fix"
   },
   "license": "MIT"
