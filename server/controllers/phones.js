@@ -40,7 +40,7 @@ const formatSpreadsheetData = (data, iPhonesDetails) => {
 
 export const loadIPhoneRequests = (req, res) => {
   csv()
-  .fromFile('./iphones.csv')
+  .fromFile('../iphones.csv')
   .then((jsonObj)=> {
     jsonObj.forEach(data => {
       // convert data to array
