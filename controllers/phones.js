@@ -1,35 +1,41 @@
 import csv from 'csvtojson'
 import iPhoneRequests from '../lib/iPhoneRequests'
 
-var phoneName = ''
-var iPhoneTradeRequestsArray = []
+let phoneName = ''
+let iPhoneTradeRequestsArray = []
+let iPhoneGrades = []
+let iPhoneStatus = ''
 
-const fn = (data, iPhonesDetails) => {
+const formatSpreadsheetData = (data, iPhonesDetails) => {
   // return if its the title row
-  if (data[1][1] === 'Storage Size') return
-  if (data[0][1] !== '' && data[0][1] !== 'Unlocked') {
-    // if (data[0][1] === 'Unlocked') {
-    //   phone.status = data[0][1]
-    //   return
-    // } else {
-    phoneName = data[0][1]
+  if (data[1][1] === 'Storage Size') {
+    iPhoneGrades = data
     return
+  }
+  if (data[0][1] !== '') {
+    const statusToLowerCase = data[0][1].toLowerCase()
+
+    if (statusToLowerCase === 'unlocked' || statusToLowerCase === 'locked') {
+      iPhoneStatus = data[0][1].toLowerCase()
+    } else {
+      phoneName = data[0][1].toLowerCase()
+      return
+    }
   }
   if (data[2][1] === '') return
 
-  iPhonesDetails.push({
-    trade_type: data[0][0] === 'Buy Request' ? 'buy' : 'sell',
-    name: phoneName,
-    size: data[1][1],
-    new: data[2][1],
-    gradeA1: data[3][1],
-    gradeA2: data[4][1],
-    gradeB1: data[5][1],
-    gradeB2: data[6][1],
-    gradeC: data[7][1],
-    gradeCB: data[8][1],
-    gradeCD: data[9][1]
-  })
+  let i = 2;
+  while (i < 10) { 
+    iPhonesDetails.push({
+      trade_type: data[0][0] === 'Buy Request' ? 'buy' : 'sell',
+      name: phoneName,
+      size: data[1][1].toLowerCase(),
+      status: iPhoneStatus.toLowerCase(),
+      grade: iPhoneGrades[i][1].toLowerCase(),
+      price: parseInt(data[i][1].substr(1).replace(/,/g, ''))
+    })
+    i++
+  }
 }
 
 export const loadIPhoneRequests = (req, res) => {
@@ -44,8 +50,8 @@ export const loadIPhoneRequests = (req, res) => {
       const buyData = dataToArray.splice(0, 10)
       const sellData = dataToArray.splice(1, 11)
      
-      fn(buyData, iPhoneTradeRequestsArray)
-      fn(sellData, iPhoneTradeRequestsArray)
+      formatSpreadsheetData(buyData, iPhoneTradeRequestsArray)
+      formatSpreadsheetData(sellData, iPhoneTradeRequestsArray)
     })
   
     iPhoneRequests.insertMany(iPhoneTradeRequestsArray, (err, result) => {
@@ -53,7 +59,7 @@ export const loadIPhoneRequests = (req, res) => {
         res.status(500).send({ err })
       } else {
         return res.status(200).send({
-          message: 'iPhone trade Requests loaded successfully',
+          message: 'Trade Request loaded successfully',
         })
       }
     })
@@ -61,34 +67,53 @@ export const loadIPhoneRequests = (req, res) => {
 
 }
 
-export const getIPhoneRequests = (req, res) => {
-  var page = parseInt(req.query.page)
-  var size = parseInt(req.query.size)
-  var query = {}
+export const getIPhoneRequests = ({ query: { page, page_size, trade_type, search_text, grade, size, name, price }}, res) => {
+  const pageNum = parseInt(page || 1)
+  const pageSize = parseInt(page_size)
+  const query = {}
+  let response
+  const filterObject = {}
+  const parsedPrice = price && price.trim() != 'undefined' ? JSON.parse(price) : []
+  const parsedSize = size && size.trim() != 'undefined' ? JSON.parse(size) : []
+  const parsedName = name && name.trim() != 'undefined' ? JSON.parse(name) : []
+  const parsedGrade = grade && grade.trim() != 'undefined' ? JSON.parse(grade) : []
 
-  if (page < 0 || page === 0) {
+  if (trade_type) filterObject['trade_type'] = trade_type
+  if (parsedGrade && parsedGrade.length) filterObject['grade'] = { $in: parsedGrade }
+  if (parsedSize && parsedSize.length) filterObject['size'] = { $in: parsedSize }
+  if (parsedName && parsedName.length) filterObject['name'] = { $in: parsedName }
+  if (parsedPrice && parsedPrice.length) filterObject['price'] = { $gt: parsedPrice[0], $lt: parsedPrice[1] }
+
+  if (pageNum < 0 || pageNum === 0) {
     response = {"error" : true,"message" : "invalid page number, should start with 1"}
     return res.json(response)
   }
 
-  query.skip = size * (page - 1)
-  query.limit = size
+  query.skip = pageSize * (pageNum - 1)
+  query.limit = pageSize
 
-  iPhoneRequests.count({ trade_type: req.query.trade_type },function(err,totalCount) {
+  const requestType = search_text && search_text.trim() != 'undefined'
+    ? { $text: { $search: search_text } }
+    : filterObject
+  
+  iPhoneRequests.count(requestType, function(err,totalCount) {
     if(err) {
       response = {"error" : true,"message" : "Error fetching data"}
     }
     
-    iPhoneRequests.find({ trade_type: req.query.trade_type }, {}, query, (err, result) => {
+    iPhoneRequests.find(requestType, {}, query, (err, result) => {
       if (err) {
-        return res.status(500).send({ message: 'Network error' })
+        return res.status(500).send({ message: 'Error fetching data' })
       } else {
-        const totalPages = Math.ceil(totalCount / size)
-
-        return res.status(200).send({
-          "iphone_requests" : result,
-          "pages": totalPages
-        })
+        const totalPages = Math.ceil(totalCount / pageSize)
+        response = {
+          "phone_requests" : result,
+          "meta": {
+            totalPages,
+            currentPage: pageNum
+          }
+        }
+        return res.status(200).send(response)
       }
     })
   })
