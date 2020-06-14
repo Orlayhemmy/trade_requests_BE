@@ -21,9 +21,7 @@
   },
   "scripts": {
     "start-dev": "nodemon --exec babel-node -- server/server.js",
-    "start": "node dist/server/server.js",
-    "start:prod": "yarn build:prod && yarn start",
-    "build:prod": "rm -rf dist && NODE_ENV=production && babel server -d dist/server",
+    "start": "babel-node -- server/server.js",
     "lint": "eslint --fix"
   },
   "license": "MIT"
