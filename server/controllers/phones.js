@@ -5,6 +5,8 @@ let phoneName = ''
 let iPhoneTradeRequestsArray = []
 let iPhoneGrades = []
 let iPhoneStatus = ''
+const path = path.resolve(--__dirname, '../iphones.csv');
+const filePath = fs.readFileSync(path, "utf8")
 
 const formatSpreadsheetData = (data, iPhonesDetails) => {
   // return if its the title row
@@ -40,7 +42,7 @@ const formatSpreadsheetData = (data, iPhonesDetails) => {
 
 export const loadIPhoneRequests = (req, res) => {
   csv()
-  .fromFile('../iphones.csv')
+  .fromFile(filePath)
   .then((jsonObj)=> {
     jsonObj.forEach(data => {
       // convert data to array
