@@ -1,22 +1,22 @@
 import csv from 'csvtojson'
-import iPhoneRequests from '../lib/iPhoneRequests'
+import PhoneRequests from '../lib/phoneRequests'
 
 let phoneName = ''
-let iPhoneTradeRequestsArray = []
-let iPhoneGrades = []
-let iPhoneStatus = ''
+let phoneTradeRequestsArray = []
+let phoneGrades = []
+let phoneStatus = ''
 
-const formatSpreadsheetData = (data, iPhonesDetails) => {
+const formatSpreadsheetData = (data, phonesDetails) => {
   // return if its the title row
   if (data[1][1] === 'Storage Size') {
-    iPhoneGrades = data
+    phoneGrades = data
     return
   }
   if (data[0][1] !== '') {
     const statusToLowerCase = data[0][1].toLowerCase()
 
     if (statusToLowerCase === 'unlocked' || statusToLowerCase === 'locked') {
-      iPhoneStatus = data[0][1].toLowerCase()
+      phoneStatus = data[0][1].toLowerCase()
     } else {
       phoneName = data[0][1].toLowerCase()
       return
@@ -26,19 +26,19 @@ const formatSpreadsheetData = (data, iPhonesDetails) => {
 
   let i = 2;
   while (i < 10) { 
-    iPhonesDetails.push({
+    phonesDetails.push({
       trade_type: data[0][0] === 'Buy Request' ? 'buy' : 'sell',
       name: phoneName,
       size: data[1][1].toLowerCase(),
-      status: iPhoneStatus.toLowerCase(),
-      grade: iPhoneGrades[i][1].toLowerCase(),
+      status: phoneStatus.toLowerCase(),
+      grade: phoneGrades[i][1].toLowerCase(),
       price: parseInt(data[i][1].substr(1).replace(/,/g, ''))
     })
     i++
   }
 }
 
-export const loadIPhoneRequests = (req, res) => {
+export const loadPhoneRequests = (req, res) => {
   csv()
   .fromFile('./iphones.csv')
   .then((jsonObj)=> {
@@ -50,11 +50,12 @@ export const loadIPhoneRequests = (req, res) => {
       const buyData = dataToArray.splice(0, 10)
       const sellData = dataToArray.splice(1, 11)
      
-      formatSpreadsheetData(buyData, iPhoneTradeRequestsArray)
-      formatSpreadsheetData(sellData, iPhoneTradeRequestsArray)
+      formatSpreadsheetData(buyData, phoneTradeRequestsArray)
+      formatSpreadsheetData(sellData, phoneTradeRequestsArray)
     })
   
-    iPhoneRequests.insertMany(iPhoneTradeRequestsArray, (err, result) => {
+    PhoneRequests.insertMany(phoneTradeRequestsArray,
+    (err, result) => {
       if (err) {
         res.status(500).send({ err })
       } else {
@@ -67,7 +68,11 @@ export const loadIPhoneRequests = (req, res) => {
 
 }
 
-export const getIPhoneRequests = ({ query: { page, page_size, trade_type, search_text, grade, size, name, price }}, res) => {
+export const getPhoneRequests = ({
+  query: {
+    page, page_size, trade_type, search_text, grade, size, name, price
+  }
+}, res) => {
   const pageNum = parseInt(page || 1)
   const pageSize = parseInt(page_size)
   const query = {}
@@ -82,10 +87,14 @@ export const getIPhoneRequests = ({ query: { page, page_size, trade_type, search
   if (parsedGrade && parsedGrade.length) filterObject['grade'] = { $in: parsedGrade }
   if (parsedSize && parsedSize.length) filterObject['size'] = { $in: parsedSize }
   if (parsedName && parsedName.length) filterObject['name'] = { $in: parsedName }
-  if (parsedPrice && parsedPrice.length) filterObject['price'] = { $gt: parsedPrice[0], $lt: parsedPrice[1] }
+  if (parsedPrice && parsedPrice.length)
+    filterObject['price'] = { $gt: parsedPrice[0], $lt: parsedPrice[1] }
 
   if (pageNum < 0 || pageNum === 0) {
-    response = {"error" : true,"message" : "invalid page number, should start with 1"}
+    response = {
+      "error" : true,
+      "message" : "invalid page number, should start with 1"
+    }
     return res.json(response)
   }
 
@@ -95,13 +104,13 @@ export const getIPhoneRequests = ({ query: { page, page_size, trade_type, search
   const requestType = search_text && search_text.trim() != 'undefined'
     ? { $text: { $search: search_text } }
     : filterObject
-  
-  iPhoneRequests.count(requestType, function(err,totalCount) {
+
+    PhoneRequests.count(requestType, function(err,totalCount) {
     if(err) {
       response = {"error" : true,"message" : "Error fetching data"}
     }
     
-    iPhoneRequests.find(requestType, {}, query, (err, result) => {
+    PhoneRequests.find(requestType, {}, query, (err, result) => {
       if (err) {
         return res.status(500).send({ message: 'Error fetching data' })
       } else {

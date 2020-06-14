@@ -21,7 +21,6 @@
     "max-len": [2, { "code": 80, "tabWidth": 2, "ignoreUrls": true }],
     "no-param-reassign": 0,
     "comma-dangle": 0,
-    "react/jsx-uses-vars": [2],
     "curly": ["error", "multi-line"],
     "import/extensions": 0,
     "import/no-unresolved": [0, { "commonjs": false }],
