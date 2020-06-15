@@ -54,8 +54,7 @@ export const loadPhoneRequests = (req, res) => {
       formatSpreadsheetData(sellData, phoneTradeRequestsArray)
     })
   
-    PhoneRequests.insertMany(phoneTradeRequestsArray,
-    (err, result) => {
+    phoneRequests.insertMany(phoneTradeRequestsArray, (err, result) => {
       if (err) {
         res.status(500).send({ err })
       } else {
@@ -87,14 +86,10 @@ export const getPhoneRequests = ({
   if (parsedGrade && parsedGrade.length) filterObject['grade'] = { $in: parsedGrade }
   if (parsedSize && parsedSize.length) filterObject['size'] = { $in: parsedSize }
   if (parsedName && parsedName.length) filterObject['name'] = { $in: parsedName }
-  if (parsedPrice && parsedPrice.length)
-    filterObject['price'] = { $gt: parsedPrice[0], $lt: parsedPrice[1] }
+  if (parsedPrice && parsedPrice.length) filterObject['price'] = { $gt: parsedPrice[0], $lt: parsedPrice[1] }
 
   if (pageNum < 0 || pageNum === 0) {
-    response = {
-      "error" : true,
-      "message" : "invalid page number, should start with 1"
-    }
+    response = {"error" : true,"message" : "invalid page number, should start with 1"}
     return res.json(response)
   }
 
@@ -104,8 +99,8 @@ export const getPhoneRequests = ({
   const requestType = search_text && search_text.trim() != 'undefined'
     ? { $text: { $search: search_text } }
     : filterObject
-
-    PhoneRequests.count(requestType, function(err,totalCount) {
+  
+  PhoneRequests.count(requestType, function(err,totalCount) {
     if(err) {
       response = {"error" : true,"message" : "Error fetching data"}
     }
@@ -126,4 +121,44 @@ export const getPhoneRequests = ({
       }
     })
   })
+}
+
+export const searchPhoneRequests = ({
+  query: {
+    search_text, page, page_size,
+  }
+}, res) => {
+  const pageNum = parseInt(page || 1)
+  const pageSize = parseInt(page_size)
+  const query = {}
+  let response = {}
+
+  if (pageNum < 0 || pageNum === 0) {
+    response = {"error" : true,"message" : "invalid page number, should start with 1"}
+    return res.json(response)
+  }
+
+  query.skip = pageSize * (pageNum - 1)
+  query.limit = pageSize
+
+  PhoneRequests.count({}, function(err,totalCount) {
+    if(err) {
+      response = {"error" : true,"message" : "Error fetching data"}
+    }
+    const totalPages = Math.ceil(totalCount / pageSize)
+
+    return PhoneRequests.find({ $text: { $search: search_text } }, {score: {$meta: "textScore" } }).sort({ score: {$meta: "textScore" } }).then((result) => {
+      response = {
+        "phone_requests" : result,
+        "meta": {
+          totalPages,
+          currentPage: pageNum
+        }
+      }
+      return res.status(200).send(response)
+    }).catch(err => {
+      return res.status(500).send({ message: err })
+    })
+  })
+    
 }
