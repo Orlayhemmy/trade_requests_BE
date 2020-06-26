@@ -54,7 +54,7 @@ export const loadPhoneRequests = (req, res) => {
       formatSpreadsheetData(sellData, phoneTradeRequestsArray)
     })
   
-    phoneRequests.insertMany(phoneTradeRequestsArray, (err, result) => {
+    PhoneRequests.insertMany(phoneTradeRequestsArray, (err, result) => {
       if (err) {
         res.status(500).send({ err })
       } else {
